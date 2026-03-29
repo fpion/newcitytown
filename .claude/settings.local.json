@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd C:/Dev/Claude/newcity && composer require --dev phpstan/phpstan phpstan/extension-installer phpstan/phpstan-symfony phpstan/phpstan-doctrine 2>&1)",
+      "Bash(cd C:/Dev/Claude/newcity && composer config allow-plugins.phpstan/extension-installer true && composer require --dev phpstan/phpstan phpstan/extension-installer phpstan/phpstan-symfony phpstan/phpstan-doctrine 2>&1)",
+      "Bash(cd C:/Dev/Claude/newcity && php vendor/bin/phpstan analyse --memory-limit=256M 2>&1)"
+    ]
+  }
+}
