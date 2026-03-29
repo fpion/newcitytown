@@ -16,6 +16,9 @@ test('Should Can publish a news', function () {
     $now = new \DateTimeImmutable();
     $news = new News('This is a new News',$now);
 
-    expect($news->getNewsInfo()->title)->toBe('This is a new News');
+
+    expect($news->isPublish())->toBeFalse();
+    $news->Publish();
+    expect($news->isPublish())->toBeTrue();
 });
 });
