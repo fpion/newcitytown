@@ -1,0 +1,43 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Create news{% endblock %}
+
+{% block body %}
+<div style="max-width: 600px; margin: 2rem auto; padding: 0 1rem; font-family: system-ui, sans-serif;">
+    <a href="{{ path('news_index') }}" style="color: #2563eb; text-decoration: none; font-size: 0.875rem;">&larr; Back to list</a>
+
+    <h1 style="margin: 1.5rem 0;">Create a news article</h1>
+
+    {% for flash in app.flashes('error') %}
+        <div style="background: #fee2e2; border: 1px solid #fca5a5; padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 1rem; color: #991b1b;">
+            {{ flash }}
+        </div>
+    {% endfor %}
+
+    <form method="POST" action="{{ path('news_create') }}">
+        <div style="margin-bottom: 1.5rem;">
+            <label for="title" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151;">
+                Title
+            </label>
+            <input type="text"
+                   id="title"
+                   name="title"
+                   required
+                   autofocus
+                   placeholder="Enter the news title..."
+                   style="width: 100%; padding: 0.625rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 1rem; box-sizing: border-box;">
+        </div>
+
+        <div style="display: flex; gap: 1rem;">
+            <button type="submit"
+                    style="background: #2563eb; color: white; padding: 0.625rem 1.5rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.875rem; font-weight: 600;">
+                Create
+            </button>
+            <a href="{{ path('news_index') }}"
+               style="padding: 0.625rem 1.5rem; border: 1px solid #d1d5db; border-radius: 6px; text-decoration: none; color: #374151; font-size: 0.875rem; font-weight: 600;">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

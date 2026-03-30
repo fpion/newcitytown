@@ -2,13 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\News;
+namespace App\Application\News\Command;
 
-final readonly class TitleInfo
+final readonly class CreateNewsCommand
 {
     public function __construct(
         public string $title,
-        public \DateTimeImmutable $createdAt,
     ) {
     }
 }
