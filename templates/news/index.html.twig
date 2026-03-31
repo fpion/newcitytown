@@ -1,0 +1,65 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}News{% endblock %}
+
+{% block body %}
+<div style="max-width: 800px; margin: 2rem auto; padding: 0 1rem; font-family: system-ui, sans-serif;">
+    <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <h1 style="margin: 0;">News</h1>
+        <a href="{{ path('news_create') }}"
+           style="background: #2563eb; color: white; padding: 0.5rem 1rem; border-radius: 6px; text-decoration: none;">
+            + New article
+        </a>
+    </header>
+
+    {% for flash in app.flashes('success') %}
+        <div style="background: #dcfce7; border: 1px solid #86efac; padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 1rem; color: #166534;">
+            {{ flash }}
+        </div>
+    {% endfor %}
+
+    {% if news_list is empty %}
+        <p style="color: #6b7280; text-align: center; padding: 3rem 0;">No news yet. Create your first article!</p>
+    {% else %}
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+            {% for news in news_list %}
+                <article style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.25rem; transition: box-shadow 0.2s;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <h2 style="margin: 0 0 0.5rem;">
+                                <a href="{{ path('news_show', { id: news.id }) }}"
+                                   style="color: #111827; text-decoration: none;">
+                                    {{ news.title }}
+                                </a>
+                            </h2>
+                            <time style="color: #6b7280; font-size: 0.875rem;">
+                                {{ news.createdAt|date('d/m/Y H:i') }}
+                            </time>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            {% if news.private %}
+                                <span style="background: #f3f4f6; color: #6b7280; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;">
+                                    Privé
+                                </span>
+                            {% else %}
+                                <span style="background: #dbeafe; color: #1d4ed8; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;">
+                                    Public
+                                </span>
+                            {% endif %}
+                            {% if news.published %}
+                                <span style="background: #dcfce7; color: #166534; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;">
+                                    Published
+                                </span>
+                            {% else %}
+                                <span style="background: #fef3c7; color: #92400e; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;">
+                                    Draft
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
