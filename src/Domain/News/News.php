@@ -6,6 +6,7 @@ namespace App\Domain\News;
 
 use App\Domain\News\Event\NewsCreated;
 use App\Domain\News\Event\NewsPublished;
+use App\Domain\News\Event\NewsVisibilityChanged;
 use App\Domain\Shared\AggregateRoot;
 
 final class News extends AggregateRoot
@@ -15,9 +16,10 @@ final class News extends AggregateRoot
     private \DateTimeImmutable $createdAt;
     private bool $published = false;
     private ?\DateTimeImmutable $publishedAt = null;
+    private bool $private = true;
 
     /** Named constructor — the ONLY way to create a new News. */
-    public static function create(NewsId $id, string $title, \DateTimeImmutable $createdAt): self
+    public static function create(NewsId $id, string $title, \DateTimeImmutable $createdAt, bool $private = true): self
     {
         $news = new self();
 
@@ -26,6 +28,7 @@ final class News extends AggregateRoot
             title: $title,
             createdAt: $createdAt,
             occurredAt: new \DateTimeImmutable(),
+            private: $private,
         ));
 
         return $news;
@@ -59,6 +62,37 @@ final class News extends AggregateRoot
         return $this->published;
     }
 
+    public function isPrivate(): bool
+    {
+        return $this->private;
+    }
+
+    public function makePrivate(): void
+    {
+        if ($this->private) {
+            throw new \DomainException('News is already private.');
+        }
+
+        $this->recordThat(new NewsVisibilityChanged(
+            aggregateId: (string) $this->id,
+            private: true,
+            occurredAt: new \DateTimeImmutable(),
+        ));
+    }
+
+    public function makePublic(): void
+    {
+        if (!$this->private) {
+            throw new \DomainException('News is already public.');
+        }
+
+        $this->recordThat(new NewsVisibilityChanged(
+            aggregateId: (string) $this->id,
+            private: false,
+            occurredAt: new \DateTimeImmutable(),
+        ));
+    }
+
     // --- Event application methods (private, pure state mutation) ---
 
     protected function applyNewsCreated(NewsCreated $event): void
@@ -66,6 +100,7 @@ final class News extends AggregateRoot
         $this->id = NewsId::fromString($event->aggregateId());
         $this->title = $event->title;
         $this->createdAt = $event->createdAt;
+        $this->private = $event->private;
     }
 
     protected function applyNewsPublished(NewsPublished $event): void
@@ -73,4 +108,10 @@ final class News extends AggregateRoot
         $this->published = true;
         $this->publishedAt = $event->publishedAt;
     }
+
+    protected function applyNewsVisibilityChanged(NewsVisibilityChanged $event): void
+    {
+        $this->private = $event->private;
+    }
+
 }

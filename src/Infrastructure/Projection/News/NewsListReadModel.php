@@ -13,6 +13,7 @@ final class NewsListReadModel
         public \DateTimeImmutable $createdAt,
         public bool $published = false,
         public ?\DateTimeImmutable $publishedAt = null,
+        public bool $private = true,
     ) {
     }
 }

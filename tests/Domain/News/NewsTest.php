@@ -6,6 +6,7 @@ namespace Tests\Domain\News;
 
 use App\Domain\News\Event\NewsCreated;
 use App\Domain\News\Event\NewsPublished;
+use App\Domain\News\Event\NewsVisibilityChanged;
 use App\Domain\News\News;
 use App\Domain\News\NewsId;
 use App\Domain\Shared\EventStream;
@@ -22,6 +23,7 @@ describe('News Aggregate Root', function () {
             ->and($news->titleInfo()->title)->toBe('Breaking news')
             ->and($news->titleInfo()->createdAt)->toBe($now)
             ->and($news->isPublished())->toBeFalse()
+            ->and($news->isPrivate())->toBeTrue()
             ->and($news->version())->toBe(1);
 
         // Verify the emitted event
@@ -30,7 +32,84 @@ describe('News Aggregate Root', function () {
             ->and($events[0])->toBeInstanceOf(NewsCreated::class)
             ->and($events[0]->title)->toBe('Breaking news')
             ->and($events[0]->aggregateId())->toBe((string) $id)
-            ->and($events[0]->eventName())->toBe('news.created');
+            ->and($events[0]->eventName())->toBe('news.created')
+            ->and($events[0]->private)->toBeTrue();
+    });
+
+    test('should create a public news when explicitly specified', function () {
+        $news = News::create(
+            id: NewsId::generate(),
+            title: 'Public news',
+            createdAt: new \DateTimeImmutable(),
+            private: false,
+        );
+
+        expect($news->isPrivate())->toBeFalse();
+
+        $events = $news->uncommittedEvents();
+        expect($events[0]->private)->toBeFalse();
+    });
+
+    test('should make a public news private and emit NewsVisibilityChanged', function () {
+        $news = News::create(
+            id: NewsId::generate(),
+            title: 'My news',
+            createdAt: new \DateTimeImmutable(),
+            private: false,
+        );
+
+        $news->clearUncommittedEvents();
+        $news->makePrivate();
+
+        expect($news->isPrivate())->toBeTrue()
+            ->and($news->version())->toBe(2);
+
+        $events = $news->uncommittedEvents();
+        expect($events)->toHaveCount(1)
+            ->and($events[0])->toBeInstanceOf(NewsVisibilityChanged::class)
+            ->and($events[0]->private)->toBeTrue()
+            ->and($events[0]->eventName())->toBe('news.visibility_changed');
+    });
+
+    test('should make a private news public and emit NewsVisibilityChanged', function () {
+        $news = News::create(
+            id: NewsId::generate(),
+            title: 'My news',
+            createdAt: new \DateTimeImmutable(),
+            private: true,
+        );
+
+        $news->clearUncommittedEvents();
+        $news->makePublic();
+
+        expect($news->isPrivate())->toBeFalse();
+
+        $events = $news->uncommittedEvents();
+        expect($events[0]->private)->toBeFalse();
+    });
+
+    test('should not make a private news private again', function () {
+        $news = News::create(
+            id: NewsId::generate(),
+            title: 'My news',
+            createdAt: new \DateTimeImmutable(),
+            private: true,
+        );
+
+        expect(fn () => $news->makePrivate())
+            ->toThrow(\DomainException::class, 'News is already private.');
+    });
+
+    test('should not make a public news public again', function () {
+        $news = News::create(
+            id: NewsId::generate(),
+            title: 'My news',
+            createdAt: new \DateTimeImmutable(),
+            private: false,
+        );
+
+        expect(fn () => $news->makePublic())
+            ->toThrow(\DomainException::class, 'News is already public.');
     });
 
     test('should publish a news and emit NewsPublished event', function () {
@@ -70,12 +149,17 @@ describe('News Aggregate Root', function () {
         $stream = new EventStream([
             NewsCreated::fromPayload(
                 aggregateId: (string) $id,
-                payload: ['title' => 'Reconstituted news', 'created_at' => $now->format(\DateTimeInterface::ATOM)],
+                payload: ['title' => 'Reconstituted news', 'created_at' => $now->format(\DateTimeInterface::ATOM), 'private' => true],
                 occurredAt: $now,
             ),
             NewsPublished::fromPayload(
                 aggregateId: (string) $id,
                 payload: ['published_at' => $now->format(\DateTimeInterface::ATOM)],
+                occurredAt: $now,
+            ),
+            NewsVisibilityChanged::fromPayload(
+                aggregateId: (string) $id,
+                payload: ['private' => false],
                 occurredAt: $now,
             ),
         ]);
@@ -85,8 +169,9 @@ describe('News Aggregate Root', function () {
         expect($news->aggregateId())->toBe((string) $id)
             ->and($news->titleInfo()->title)->toBe('Reconstituted news')
             ->and($news->isPublished())->toBeTrue()
-            ->and($news->version())->toBe(2)
-            ->and($news->uncommittedEvents())->toBeEmpty(); // reconstitution does not produce uncommitted events
+            ->and($news->isPrivate())->toBeFalse()
+            ->and($news->version())->toBe(3)
+            ->and($news->uncommittedEvents())->toBeEmpty();
     });
 
 });
@@ -130,7 +215,8 @@ describe('NewsCreated Event', function () {
 
         expect($restored->aggregateId())->toBe($id)
             ->and($restored->title)->toBe('Test title')
-            ->and($restored->eventName())->toBe('news.created');
+            ->and($restored->eventName())->toBe('news.created')
+            ->and($restored->private)->toBeTrue();
     });
 
 });

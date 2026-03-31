@@ -6,6 +6,7 @@ namespace App\Infrastructure\Projection\News;
 
 use App\Domain\News\Event\NewsCreated;
 use App\Domain\News\Event\NewsPublished;
+use App\Domain\News\Event\NewsVisibilityChanged;
 use Doctrine\DBAL\Connection;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
@@ -30,6 +31,7 @@ final readonly class NewsListProjector
             'created_at' => $event->createdAt->format('Y-m-d H:i:s'),
             'published' => false,
             'published_at' => null,
+            'private' => $event->private,
         ]);
     }
 
@@ -39,6 +41,16 @@ final readonly class NewsListProjector
         $this->connection->update('news_list_view', [
             'published' => true,
             'published_at' => $event->publishedAt->format('Y-m-d H:i:s'),
+        ], [
+            'id' => $event->aggregateId(),
+        ]);
+    }
+
+    #[AsMessageHandler]
+    public function onNewsVisibilityChanged(NewsVisibilityChanged $event): void
+    {
+        $this->connection->update('news_list_view', [
+            'private' => $event->private,
         ], [
             'id' => $event->aggregateId(),
         ]);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Application\News\Command\ChangeNewsVisibilityCommand;
 use App\Application\News\Command\CreateNewsCommand;
 use App\Application\News\Command\PublishNewsCommand;
 use App\Infrastructure\Projection\News\NewsListRepository;
@@ -61,7 +62,8 @@ final class NewsController extends AbstractController
                 return $this->render('news/create.html.twig');
             }
 
-            $this->messageBus->dispatch(new CreateNewsCommand(title: $title));
+            $private = !$request->request->getBoolean('public', false);
+            $this->messageBus->dispatch(new CreateNewsCommand(title: $title, private: $private));
 
             $this->addFlash('success', 'News created successfully.');
 
@@ -69,6 +71,28 @@ final class NewsController extends AbstractController
         }
 
         return $this->render('news/create.html.twig');
+    }
+
+    /** Change the visibility of a news (public/private). */
+    #[Route('/{id}/visibility', name: 'visibility', methods: ['POST'], requirements: ['id' => '[0-9a-f\-]{36}'])]
+    public function changeVisibility(string $id, Request $request): Response
+    {
+        $news = $this->newsListRepository->findById($id);
+
+        if ($news === null) {
+            throw $this->createNotFoundException('News not found.');
+        }
+
+        $private = $request->request->getBoolean('private');
+
+        try {
+            $this->messageBus->dispatch(new ChangeNewsVisibilityCommand(newsId: $id, private: $private));
+            $this->addFlash('success', $private ? 'News is now private.' : 'News is now public.');
+        } catch (\DomainException $e) {
+            $this->addFlash('error', $e->getMessage());
+        }
+
+        return $this->redirectToRoute('news_show', ['id' => $id]);
     }
 
     /** Publish a news. */

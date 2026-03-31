@@ -57,6 +57,7 @@ final readonly class NewsListRepository
             createdAt: new \DateTimeImmutable($row['created_at']),
             published: (bool) $row['published'],
             publishedAt: $row['published_at'] ? new \DateTimeImmutable($row['published_at']) : null,
+            private: (bool) $row['private'],
         );
     }
 }

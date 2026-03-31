@@ -6,14 +6,12 @@ namespace App\Domain\News\Event;
 
 use App\Domain\Shared\DomainEvent;
 
-final readonly class NewsCreated implements DomainEvent
+final readonly class NewsVisibilityChanged implements DomainEvent
 {
     public function __construct(
         private string $aggregateId,
-        public string $title,
-        public \DateTimeImmutable $createdAt,
+        public bool $private,
         private \DateTimeImmutable $occurredAt,
-        public bool $private = true,
     ) {
     }
 
@@ -29,14 +27,12 @@ final readonly class NewsCreated implements DomainEvent
 
     public function eventName(): string
     {
-        return 'news.created';
+        return 'news.visibility_changed';
     }
 
     public function payload(): array
     {
         return [
-            'title' => $this->title,
-            'created_at' => $this->createdAt->format(\DateTimeInterface::ATOM),
             'private' => $this->private,
         ];
     }
@@ -45,10 +41,8 @@ final readonly class NewsCreated implements DomainEvent
     {
         return new self(
             aggregateId: $aggregateId,
-            title: $payload['title'],
-            createdAt: new \DateTimeImmutable($payload['created_at']),
+            private: (bool) $payload['private'],
             occurredAt: $occurredAt,
-            private: $payload['private'] ?? true,
         );
     }
 }
