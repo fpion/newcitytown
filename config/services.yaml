@@ -31,3 +31,5 @@ services:
             $eventClassMap:
                 'news.created': App\Domain\News\Event\NewsCreated
                 'news.published': App\Domain\News\Event\NewsPublished
+                'news.visibility_changed': App\Domain\News\Event\NewsVisibilityChanged
+                'news.edited': App\Domain\News\Event\NewsEdited

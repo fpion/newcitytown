@@ -29,6 +29,7 @@ final readonly class CreateNewsHandler
             title: $command->title,
             createdAt: new \DateTimeImmutable(),
             private: $command->private,
+            content: $command->content,
         );
 
         $events = $news->uncommittedEvents();

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Infrastructure\Projection\News;
 
 use App\Domain\News\Event\NewsCreated;
+use App\Domain\News\Event\NewsEdited;
 use App\Domain\News\Event\NewsPublished;
 use App\Domain\News\Event\NewsVisibilityChanged;
 use Doctrine\DBAL\Connection;
@@ -28,6 +29,7 @@ final readonly class NewsListProjector
         $this->connection->insert('news_list_view', [
             'id' => $event->aggregateId(),
             'title' => $event->title,
+            'content' => $event->content,
             'created_at' => $event->createdAt->format('Y-m-d H:i:s'),
             'published' => false,
             'published_at' => null,
@@ -51,6 +53,17 @@ final readonly class NewsListProjector
     {
         $this->connection->update('news_list_view', [
             'private' => $event->private,
+        ], [
+            'id' => $event->aggregateId(),
+        ]);
+    }
+
+    #[AsMessageHandler]
+    public function onNewsEdited(NewsEdited $event): void
+    {
+        $this->connection->update('news_list_view', [
+            'title' => $event->title,
+            'content' => $event->content,
         ], [
             'id' => $event->aggregateId(),
         ]);

@@ -7,6 +7,7 @@ namespace App\Controller;
 use App\Application\News\Command\ChangeNewsVisibilityCommand;
 use App\Application\News\Command\CreateNewsCommand;
 use App\Application\News\Command\PublishNewsCommand;
+use App\Application\News\Command\UpdateNewsCommand;
 use App\Infrastructure\Projection\News\NewsListRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -63,7 +64,8 @@ final class NewsController extends AbstractController
             }
 
             $private = !$request->request->getBoolean('public', false);
-            $this->messageBus->dispatch(new CreateNewsCommand(title: $title, private: $private));
+            $content = (string) $request->request->get('content', '');
+            $this->messageBus->dispatch(new CreateNewsCommand(title: $title, private: $private, content: $content));
 
             $this->addFlash('success', 'News created successfully.');
 
@@ -71,6 +73,42 @@ final class NewsController extends AbstractController
         }
 
         return $this->render('news/create.html.twig');
+    }
+
+    /** Show edit form and handle submission. */
+    #[Route('/{id}/edit', name: 'edit', methods: ['GET', 'POST'], requirements: ['id' => '[0-9a-f\-]{36}'])]
+    public function edit(string $id, Request $request): Response
+    {
+        $news = $this->newsListRepository->findById($id);
+
+        if ($news === null) {
+            throw $this->createNotFoundException('News not found.');
+        }
+
+        if ($request->isMethod('POST')) {
+            $title = trim((string) $request->request->get('title', ''));
+
+            if ($title === '') {
+                $this->addFlash('error', 'The title cannot be empty.');
+
+                return $this->render('news/edit.html.twig', ['news' => $news]);
+            }
+
+            $content = (string) $request->request->get('content', '');
+
+            try {
+                $this->messageBus->dispatch(new UpdateNewsCommand(newsId: $id, title: $title, content: $content));
+                $this->addFlash('success', 'News updated successfully.');
+            } catch (\DomainException $e) {
+                $this->addFlash('error', $e->getMessage());
+
+                return $this->render('news/edit.html.twig', ['news' => $news]);
+            }
+
+            return $this->redirectToRoute('news_show', ['id' => $id]);
+        }
+
+        return $this->render('news/edit.html.twig', ['news' => $news]);
     }
 
     /** Change the visibility of a news (public/private). */

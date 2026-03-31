@@ -19,7 +19,7 @@
     {% endfor %}
 
     <article style="margin-top: 1.5rem;">
-        <header style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
+        <header style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; gap: 1rem;">
             <div>
                 <h1 style="margin: 0 0 0.5rem;">{{ news.title }}</h1>
                 <time style="color: #6b7280; font-size: 0.875rem;">
@@ -53,7 +53,17 @@
             </div>
         </header>
 
-        <div style="border-top: 1px solid #e5e7eb; padding-top: 1.5rem; margin-top: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+        {% if news.content %}
+            <div style="margin-bottom: 1.5rem; line-height: 1.7; color: #374151;">
+                {{ news.content | raw }}
+            </div>
+        {% endif %}
+
+        <div style="border-top: 1px solid #e5e7eb; padding-top: 1.5rem; margin-top: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+            <a href="{{ path('news_edit', { id: news.id }) }}"
+               style="background: #f3f4f6; color: #374151; padding: 0.5rem 1.5rem; border-radius: 6px; text-decoration: none; font-size: 0.875rem; font-weight: 600; border: 1px solid #d1d5db;">
+                Modifier
+            </a>
             {% if news.private %}
                 <form method="POST" action="{{ path('news_visibility', { id: news.id }) }}">
                     <input type="hidden" name="private" value="0">

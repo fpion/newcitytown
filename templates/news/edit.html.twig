@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Create news{% endblock %}
+{% block title %}Edit — {{ news.title }}{% endblock %}
 
 {% block stylesheets %}
     <link href="https://cdn.jsdelivr.net/npm/quill@2/dist/quill.snow.css" rel="stylesheet">
@@ -8,9 +8,9 @@
 
 {% block body %}
 <div style="max-width: 700px; margin: 2rem auto; padding: 0 1rem; font-family: system-ui, sans-serif;">
-    <a href="{{ path('news_index') }}" style="color: #2563eb; text-decoration: none; font-size: 0.875rem;">&larr; Back to list</a>
+    <a href="{{ path('news_show', { id: news.id }) }}" style="color: #2563eb; text-decoration: none; font-size: 0.875rem;">&larr; Back to news</a>
 
-    <h1 style="margin: 1.5rem 0;">Create a news article</h1>
+    <h1 style="margin: 1.5rem 0;">Edit news</h1>
 
     {% for flash in app.flashes('error') %}
         <div style="background: #fee2e2; border: 1px solid #fca5a5; padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 1rem; color: #991b1b;">
@@ -18,7 +18,7 @@
         </div>
     {% endfor %}
 
-    <form method="POST" action="{{ path('news_create') }}" id="news-form">
+    <form method="POST" action="{{ path('news_edit', { id: news.id }) }}" id="news-form">
         <div style="margin-bottom: 1.5rem;">
             <label for="title" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #374151;">
                 Title
@@ -28,7 +28,7 @@
                    name="title"
                    required
                    autofocus
-                   placeholder="Enter the news title..."
+                   value="{{ news.title }}"
                    style="width: 100%; padding: 0.625rem 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 1rem; box-sizing: border-box;">
         </div>
 
@@ -40,21 +40,12 @@
             <input type="hidden" name="content" id="content-input">
         </div>
 
-        <div style="margin-bottom: 1.5rem;">
-            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                <input type="checkbox" name="public" value="1" id="public"
-                       style="width: 1rem; height: 1rem;">
-                <span style="font-weight: 600; color: #374151;">Rendre public</span>
-            </label>
-            <p style="margin: 0.25rem 0 0; color: #6b7280; font-size: 0.875rem;">Par défaut, la news est privée.</p>
-        </div>
-
         <div style="display: flex; gap: 1rem;">
             <button type="submit"
                     style="background: #2563eb; color: white; padding: 0.625rem 1.5rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.875rem; font-weight: 600;">
-                Create
+                Save
             </button>
-            <a href="{{ path('news_index') }}"
+            <a href="{{ path('news_show', { id: news.id }) }}"
                style="padding: 0.625rem 1.5rem; border: 1px solid #d1d5db; border-radius: 6px; text-decoration: none; color: #374151; font-size: 0.875rem; font-weight: 600;">
                 Cancel
             </a>
@@ -69,6 +60,11 @@
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const quill = new Quill('#quill-editor', { theme: 'snow' });
+
+            const existing = {{ news.content | json_encode | raw }};
+            if (existing) {
+                quill.clipboard.dangerouslyPasteHTML(existing);
+            }
 
             document.getElementById('news-form').addEventListener('submit', function () {
                 document.getElementById('content-input').value = quill.getSemanticHTML();

@@ -14,6 +14,7 @@ final class NewsListReadModel
         public bool $published = false,
         public ?\DateTimeImmutable $publishedAt = null,
         public bool $private = true,
+        public string $content = '',
     ) {
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Domain\News;
 
 use App\Domain\News\Event\NewsCreated;
+use App\Domain\News\Event\NewsEdited;
 use App\Domain\News\Event\NewsPublished;
 use App\Domain\News\Event\NewsVisibilityChanged;
 use App\Domain\News\News;
@@ -26,14 +27,58 @@ describe('News Aggregate Root', function () {
             ->and($news->isPrivate())->toBeTrue()
             ->and($news->version())->toBe(1);
 
-        // Verify the emitted event
         $events = $news->uncommittedEvents();
         expect($events)->toHaveCount(1)
             ->and($events[0])->toBeInstanceOf(NewsCreated::class)
             ->and($events[0]->title)->toBe('Breaking news')
             ->and($events[0]->aggregateId())->toBe((string) $id)
             ->and($events[0]->eventName())->toBe('news.created')
-            ->and($events[0]->private)->toBeTrue();
+            ->and($events[0]->private)->toBeTrue()
+            ->and($events[0]->content)->toBe('');
+    });
+
+    test('should create a news with content', function () {
+        $news = News::create(
+            id: NewsId::generate(),
+            title: 'My news',
+            createdAt: new \DateTimeImmutable(),
+            content: '<p>Hello world</p>',
+        );
+
+        $events = $news->uncommittedEvents();
+        expect($events[0]->content)->toBe('<p>Hello world</p>');
+    });
+
+    test('should edit title and content and emit NewsEdited event', function () {
+        $news = News::create(
+            id: NewsId::generate(),
+            title: 'Original title',
+            createdAt: new \DateTimeImmutable(),
+            content: '<p>Original</p>',
+        );
+
+        $news->clearUncommittedEvents();
+        $news->edit('Updated title', '<p>Updated content</p>');
+
+        expect($news->version())->toBe(2);
+
+        $events = $news->uncommittedEvents();
+        expect($events)->toHaveCount(1)
+            ->and($events[0])->toBeInstanceOf(NewsEdited::class)
+            ->and($events[0]->title)->toBe('Updated title')
+            ->and($events[0]->content)->toBe('<p>Updated content</p>')
+            ->and($events[0]->eventName())->toBe('news.edited');
+    });
+
+    test('should not edit with empty title', function () {
+        $news = News::create(
+            id: NewsId::generate(),
+            title: 'My news',
+            createdAt: new \DateTimeImmutable(),
+        );
+
+        expect(fn () => $news->edit('', '<p>content</p>'))
+            ->toThrow(\DomainException::class, 'Title cannot be empty.');
     });
 
     test('should create a public news when explicitly specified', function () {
@@ -149,7 +194,7 @@ describe('News Aggregate Root', function () {
         $stream = new EventStream([
             NewsCreated::fromPayload(
                 aggregateId: (string) $id,
-                payload: ['title' => 'Reconstituted news', 'created_at' => $now->format(\DateTimeInterface::ATOM), 'private' => true],
+                payload: ['title' => 'Reconstituted news', 'created_at' => $now->format(\DateTimeInterface::ATOM), 'private' => true, 'content' => ''],
                 occurredAt: $now,
             ),
             NewsPublished::fromPayload(
@@ -162,15 +207,20 @@ describe('News Aggregate Root', function () {
                 payload: ['private' => false],
                 occurredAt: $now,
             ),
+            NewsEdited::fromPayload(
+                aggregateId: (string) $id,
+                payload: ['title' => 'Edited title', 'content' => '<p>Edited</p>'],
+                occurredAt: $now,
+            ),
         ]);
 
         $news = News::reconstituteFrom($stream);
 
         expect($news->aggregateId())->toBe((string) $id)
-            ->and($news->titleInfo()->title)->toBe('Reconstituted news')
+            ->and($news->titleInfo()->title)->toBe('Edited title')
             ->and($news->isPublished())->toBeTrue()
             ->and($news->isPrivate())->toBeFalse()
-            ->and($news->version())->toBe(3)
+            ->and($news->version())->toBe(4)
             ->and($news->uncommittedEvents())->toBeEmpty();
     });
 
@@ -216,7 +266,8 @@ describe('NewsCreated Event', function () {
         expect($restored->aggregateId())->toBe($id)
             ->and($restored->title)->toBe('Test title')
             ->and($restored->eventName())->toBe('news.created')
-            ->and($restored->private)->toBeTrue();
+            ->and($restored->private)->toBeTrue()
+            ->and($restored->content)->toBe('');
     });
 
 });
