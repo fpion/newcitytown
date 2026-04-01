@@ -11,7 +11,10 @@
       "Bash(grep -r routing.controllers /c/Dev/Claude/newcity/vendor/symfony/framework-bundle/Routing --include=*.php)",
       "Bash(find /c/Dev/Claude/newcity -maxdepth 3 -type d -not -path */vendor/* -not -path */node_modules/*)",
       "Bash(/c/tools/php/php.exe bin/console debug:router --no-ansi)",
-      "Bash(/c/tools/php/php.exe ./vendor/bin/pest)"
+      "Bash(/c/tools/php/php.exe ./vendor/bin/pest)",
+      "Bash(git -C /c/Dev/Claude/newcity log --oneline -20)",
+      "Bash(git -C /c/Dev/Claude/newcity show 6c934ae --stat)",
+      "Bash(grep -r \"News\\\\|news\" /c/Dev/Claude/newcity/config --include=*.yaml --include=*.php)"
     ]
   }
 }
